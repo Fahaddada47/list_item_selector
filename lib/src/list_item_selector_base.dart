@@ -106,65 +106,69 @@ class _ListItemSelectorState extends State<ListItemSelector> {
         SizedBox(
           width: widget.width,
           height: widget.height,
-          child: Column(
-            children: [
-              // Dropdown
-              DropdownButtonFormField<String>(
-                decoration: InputDecoration(
-                  border: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(widget.borderRadius),
-                    borderSide: BorderSide(color: widget.borderColor ?? Colors.grey),
+          child: DropdownButtonFormField<String>(
+            decoration: InputDecoration(
+              border: OutlineInputBorder(
+                borderRadius: BorderRadius.circular(widget.borderRadius),
+                borderSide: BorderSide(color: widget.borderColor ?? Colors.grey),
+              ),
+            ),
+            value: _isCustomSelected ? null : _selectedValue,
+            hint: Text(widget.hintText ?? "Select an option"),
+            items: [
+              ..._dropdownItems.map((String value) {
+                return DropdownMenuItem<String>(
+                  value: value,
+                  child: Text(
+                    value,
+                    style: widget.itemTextStyle ?? TextStyle(fontSize: widget.fontSize),
+                  ),
+                );
+              }).toList(),
+
+              // Separator inside the dropdown list
+              DropdownMenuItem<String>(
+                enabled: false, // Makes it unselectable
+                child: Padding(
+                  padding: const EdgeInsets.symmetric(vertical: 8.0),
+                  child: Row(
+                    children: [
+                      Expanded(child: Divider(thickness: 1)),
+                      Padding(
+                        padding: const EdgeInsets.symmetric(horizontal: 8.0),
+                        child: Text("or", style: TextStyle(color: Colors.grey)),
+                      ),
+                      Expanded(child: Divider(thickness: 1)),
+                    ],
                   ),
                 ),
-                value: _isCustomSelected ? null : _selectedValue,
-                hint: Text(widget.hintText ?? "Select an option"),
-                items: _dropdownItems.map((String value) {
-                  return DropdownMenuItem<String>(
-                    value: value,
-                    child: Text(
-                      value,
-                      style: widget.itemTextStyle ?? TextStyle(fontSize: widget.fontSize),
-                    ),
-                  );
-                }).toList(),
-                onChanged: _handleValueChanged,
-                validator: widget.validator,
-                dropdownColor: widget.dropdownColor,
-                elevation: widget.elevation?.toInt() ?? 8,
-                icon: widget.suffixIcon ?? const Icon(Icons.arrow_drop_down_circle_outlined),
-                iconSize: widget.iconSize,
-                isExpanded: widget.isExpanded,
               ),
 
-              // Separator with "or"
-              Padding(
-                padding: const EdgeInsets.symmetric(vertical: 8.0),
-                child: Row(
-                  children: [
-                    Expanded(child: Divider(thickness: 1)),
-                    Padding(
-                      padding: const EdgeInsets.symmetric(horizontal: 8.0),
-                      child: Text("or", style: TextStyle(color: Colors.grey)),
-                    ),
-                    Expanded(child: Divider(thickness: 1)),
-                  ],
-                ),
-              ),
-
-              // Custom Input Field
-              if (widget.allowCustomItem)
-                TextField(
+              // Custom input field inside dropdown
+              DropdownMenuItem<String>(
+                value: _selectedValue,
+                child: TextField(
                   controller: _controller,
-                  decoration: InputDecoration(
+                  decoration: const InputDecoration(
                     hintText: "Add your custom item",
-                    border: OutlineInputBorder(
-                      borderRadius: BorderRadius.circular(widget.borderRadius),
-                      borderSide: BorderSide(color: widget.borderColor ?? Colors.grey),
-                    ),
+                    border: InputBorder.none, // Removes the extra border
                   ),
                   onChanged: _onCustomTextChanged,
+                  onTap: () {
+                    setState(() {
+                      _isCustomSelected = true;
+                    });
+                  },
                 ),
+              ),
             ],
+            onChanged: _handleValueChanged,
+            validator: widget.validator,
+            dropdownColor: widget.dropdownColor,
+            elevation: widget.elevation?.toInt() ?? 8,
+            icon: widget.suffixIcon ?? const Icon(Icons.arrow_drop_down_circle_outlined),
+            iconSize: widget.iconSize,
+            isExpanded: widget.isExpanded,
           ),
         ),
       ],
