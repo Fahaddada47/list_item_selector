@@ -40,9 +40,9 @@ class ListItemSelector extends StatefulWidget {
     this.hintText,
     required this.onChanged,
     this.validator,
-    this.borderColor,
-    this.focusedBorderColor,
-    this.errorBorderColor,
+    this.borderColor = Colors.grey,
+    this.focusedBorderColor = Colors.blue,
+    this.errorBorderColor = Colors.red,
     this.dropdownColor,
     this.fontSize = 14.0,
     this.hintColor,
@@ -84,8 +84,8 @@ class _ListItemSelectorState extends State<ListItemSelector> {
       _selectedValue = newValue;
       _controller.text = newValue;
 
-      // If the custom item is enabled and it's not in the list, add it
-      if (widget.allowCustomItem && !_dropdownItems.contains(newValue)) {
+      // If custom item is enabled and it's not in the list, add it
+      if (widget.allowCustomItem && newValue.isNotEmpty && !_dropdownItems.contains(newValue)) {
         _dropdownItems.add(newValue);
       }
     });
@@ -106,27 +106,29 @@ class _ListItemSelectorState extends State<ListItemSelector> {
             children: [
               // Editable TextField for Custom Item Entry
               if (widget.allowCustomItem)
-                TextField(
-                  controller: _controller,
-                  decoration: InputDecoration(
-                    hintText: widget.hintText,
-                    border: OutlineInputBorder(
-                      borderRadius: BorderRadius.circular(widget.borderRadius),
-                      borderSide: BorderSide(
-                        color: widget.borderColor ?? Colors.grey,
+                Padding(
+                  padding: const EdgeInsets.only(bottom: 8.0),
+                  child: TextField(
+                    controller: _controller,
+                    decoration: InputDecoration(
+                      hintText: widget.hintText ?? "Enter custom value",
+                      border: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(widget.borderRadius),
+                        borderSide: BorderSide(
+                          color: widget.borderColor ?? Colors.grey,
+                        ),
                       ),
                     ),
+                    onSubmitted: (value) {
+                      if (value.isNotEmpty) {
+                        _handleValueChanged(value);
+                      }
+                    },
                   ),
-                  onSubmitted: (value) {
-                    if (value.isNotEmpty) {
-                      _handleValueChanged(value);
-                    }
-                  },
                 ),
-              const SizedBox(height: 8),
               DropdownButtonFormField<String>(
                 decoration: InputDecoration(
-                  hintText: widget.hintText,
+                  hintText: widget.hintText ?? "Select an option",
                   border: OutlineInputBorder(
                     borderRadius: BorderRadius.circular(widget.borderRadius),
                     borderSide: BorderSide(
