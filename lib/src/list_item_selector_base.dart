@@ -1,13 +1,13 @@
 import 'package:flutter/material.dart';
 
-class ListItemSelector extends StatelessWidget {
+class ListItemSelector extends StatefulWidget {
   final String? selectedValue;
   final List<String> items;
-  final String hintText;
+  final String? hintText;
   final ValueChanged<String?> onChanged;
   final FormFieldValidator<String?>? validator;
 
-  // Additional parameters for more customization
+  // Customization parameters
   final Color? borderColor;
   final Color? focusedBorderColor;
   final Color? errorBorderColor;
@@ -23,7 +23,10 @@ class ListItemSelector extends StatelessWidget {
   final double iconSize;
   final bool isExpanded;
 
-  // Parameters to control size
+  // Custom item functionality
+  final bool allowCustomItem;
+
+  // Size control
   final double? width;
   final double? height;
 
@@ -34,73 +37,60 @@ class ListItemSelector extends StatelessWidget {
     Key? key,
     required this.selectedValue,
     required this.items,
-    required this.hintText,
+    this.hintText,
     required this.onChanged,
     this.validator,
-    this.borderColor = const Color(0xFFD7D7FF),
-    this.focusedBorderColor = const Color(0xFF5D5CFF),
-    this.errorBorderColor = Colors.red,
+    this.borderColor,
+    this.focusedBorderColor,
+    this.errorBorderColor,
     this.dropdownColor,
     this.fontSize = 14.0,
-    this.hintColor = const Color(0xffBEBEBE),
-    this.labelColor = const Color(0xff828290),
+    this.hintColor,
+    this.labelColor,
     this.borderRadius = 8.0,
     this.contentPadding,
-    this.suffixIcon = const Icon(Icons.arrow_drop_down_circle_outlined),
+    this.suffixIcon,
     this.itemTextStyle,
-    this.elevation = 8.0,  // Default elevation
+    this.elevation = 8.0,
     this.iconSize = 24.0,
     this.isExpanded = true,
     this.width,
     this.height,
     this.labelWidget,
+    this.allowCustomItem = false,
   }) : super(key: key);
 
-  InputDecoration _buildInputDecoration() {
-    return InputDecoration(
-      hintText: hintText,
-      hintStyle: TextStyle(
-        color: hintColor,
-        fontWeight: FontWeight.w400,
-        fontSize: fontSize,
-      ),
-      labelStyle: TextStyle(
-        color: labelColor,
-        fontWeight: FontWeight.w400,
-        fontSize: fontSize,
-      ),
-      contentPadding: contentPadding,
-      border: OutlineInputBorder(
-        borderRadius: BorderRadius.circular(borderRadius),
-        borderSide: BorderSide(
-          color: borderColor!,
-        ),
-      ),
-      focusedBorder: OutlineInputBorder(
-        borderRadius: BorderRadius.circular(borderRadius),
-        borderSide: BorderSide(
-          color: focusedBorderColor!,
-        ),
-      ),
-      enabledBorder: OutlineInputBorder(
-        borderRadius: BorderRadius.circular(borderRadius),
-        borderSide: BorderSide(
-          color: borderColor!,
-        ),
-      ),
-      errorBorder: OutlineInputBorder(
-        borderRadius: BorderRadius.circular(borderRadius),
-        borderSide: BorderSide(
-          color: errorBorderColor!,
-        ),
-      ),
-      focusedErrorBorder: OutlineInputBorder(
-        borderRadius: BorderRadius.circular(borderRadius),
-        borderSide: BorderSide(
-          color: errorBorderColor!,
-        ),
-      ),
-    );
+  @override
+  _ListItemSelectorState createState() => _ListItemSelectorState();
+}
+
+class _ListItemSelectorState extends State<ListItemSelector> {
+  late TextEditingController _controller;
+  late List<String> _dropdownItems;
+  String? _selectedValue;
+
+  @override
+  void initState() {
+    super.initState();
+    _controller = TextEditingController(text: widget.selectedValue);
+    _dropdownItems = List.from(widget.items);
+    _selectedValue = widget.selectedValue;
+  }
+
+  void _handleValueChanged(String? newValue) {
+    if (newValue == null) return;
+
+    setState(() {
+      _selectedValue = newValue;
+      _controller.text = newValue;
+
+      // If the custom item is enabled and it's not in the list, add it
+      if (widget.allowCustomItem && !_dropdownItems.contains(newValue)) {
+        _dropdownItems.add(newValue);
+      }
+    });
+
+    widget.onChanged(newValue);
   }
 
   @override
@@ -108,30 +98,62 @@ class ListItemSelector extends StatelessWidget {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        if (labelWidget != null) labelWidget!,
+        if (widget.labelWidget != null) widget.labelWidget!,
         SizedBox(
-          width: width,  // Set width
-          height: height,  // Set height
-          child: DropdownButtonFormField<String>(
-            decoration: _buildInputDecoration(),
-            value: selectedValue,
-            hint: Text(hintText),
-            items: items.map((String value) {
-              return DropdownMenuItem<String>(
-                value: value,
-                child: Text(
-                  value,
-                  style: itemTextStyle ?? TextStyle(fontSize: fontSize),
+          width: widget.width,
+          height: widget.height,
+          child: Column(
+            children: [
+              // Editable TextField for Custom Item Entry
+              if (widget.allowCustomItem)
+                TextField(
+                  controller: _controller,
+                  decoration: InputDecoration(
+                    hintText: widget.hintText,
+                    border: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(widget.borderRadius),
+                      borderSide: BorderSide(
+                        color: widget.borderColor ?? Colors.grey,
+                      ),
+                    ),
+                  ),
+                  onSubmitted: (value) {
+                    if (value.isNotEmpty) {
+                      _handleValueChanged(value);
+                    }
+                  },
                 ),
-              );
-            }).toList(),
-            onChanged: onChanged,
-            validator: validator,
-            dropdownColor: dropdownColor,
-            elevation: elevation?.toInt() ?? 8,
-            icon: suffixIcon,
-            iconSize: iconSize,
-            isExpanded: isExpanded,
+              const SizedBox(height: 8),
+              DropdownButtonFormField<String>(
+                decoration: InputDecoration(
+                  hintText: widget.hintText,
+                  border: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(widget.borderRadius),
+                    borderSide: BorderSide(
+                      color: widget.borderColor ?? Colors.grey,
+                    ),
+                  ),
+                ),
+                value: _selectedValue,
+                hint: Text(widget.hintText ?? "Select an option"),
+                items: _dropdownItems.map((String value) {
+                  return DropdownMenuItem<String>(
+                    value: value,
+                    child: Text(
+                      value,
+                      style: widget.itemTextStyle ?? TextStyle(fontSize: widget.fontSize),
+                    ),
+                  );
+                }).toList(),
+                onChanged: _handleValueChanged,
+                validator: widget.validator,
+                dropdownColor: widget.dropdownColor,
+                elevation: widget.elevation?.toInt() ?? 8,
+                icon: widget.suffixIcon ?? const Icon(Icons.arrow_drop_down_circle_outlined),
+                iconSize: widget.iconSize,
+                isExpanded: widget.isExpanded,
+              ),
+            ],
           ),
         ),
       ],
