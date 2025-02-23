@@ -68,29 +68,33 @@ class _ListItemSelectorState extends State<ListItemSelector> {
   late TextEditingController _controller;
   late List<String> _dropdownItems;
   String? _selectedValue;
+  bool _isCustomSelected = false;
 
   @override
   void initState() {
     super.initState();
-    _controller = TextEditingController(text: widget.selectedValue);
+    _controller = TextEditingController();
     _dropdownItems = List.from(widget.items);
     _selectedValue = widget.selectedValue;
   }
 
   void _handleValueChanged(String? newValue) {
-    if (newValue == null) return;
-
     setState(() {
       _selectedValue = newValue;
-      _controller.text = newValue;
-
-      // If custom item is enabled and it's not in the list, add it
-      if (widget.allowCustomItem && newValue.isNotEmpty && !_dropdownItems.contains(newValue)) {
-        _dropdownItems.add(newValue);
-      }
+      _isCustomSelected = false;
+      _controller.clear();
     });
 
     widget.onChanged(newValue);
+  }
+
+  void _onCustomTextChanged(String value) {
+    setState(() {
+      _selectedValue = value;
+      _isCustomSelected = true;
+    });
+
+    widget.onChanged(value);
   }
 
   @override
@@ -104,39 +108,15 @@ class _ListItemSelectorState extends State<ListItemSelector> {
           height: widget.height,
           child: Column(
             children: [
-              // Editable TextField for Custom Item Entry
-              if (widget.allowCustomItem)
-                Padding(
-                  padding: const EdgeInsets.only(bottom: 8.0),
-                  child: TextField(
-                    controller: _controller,
-                    decoration: InputDecoration(
-                      hintText: widget.hintText ?? "Enter custom value",
-                      border: OutlineInputBorder(
-                        borderRadius: BorderRadius.circular(widget.borderRadius),
-                        borderSide: BorderSide(
-                          color: widget.borderColor ?? Colors.grey,
-                        ),
-                      ),
-                    ),
-                    onSubmitted: (value) {
-                      if (value.isNotEmpty) {
-                        _handleValueChanged(value);
-                      }
-                    },
-                  ),
-                ),
+              // Dropdown
               DropdownButtonFormField<String>(
                 decoration: InputDecoration(
-                  hintText: widget.hintText ?? "Select an option",
                   border: OutlineInputBorder(
                     borderRadius: BorderRadius.circular(widget.borderRadius),
-                    borderSide: BorderSide(
-                      color: widget.borderColor ?? Colors.grey,
-                    ),
+                    borderSide: BorderSide(color: widget.borderColor ?? Colors.grey),
                   ),
                 ),
-                value: _selectedValue,
+                value: _isCustomSelected ? null : _selectedValue,
                 hint: Text(widget.hintText ?? "Select an option"),
                 items: _dropdownItems.map((String value) {
                   return DropdownMenuItem<String>(
@@ -155,6 +135,35 @@ class _ListItemSelectorState extends State<ListItemSelector> {
                 iconSize: widget.iconSize,
                 isExpanded: widget.isExpanded,
               ),
+
+              // Separator with "or"
+              Padding(
+                padding: const EdgeInsets.symmetric(vertical: 8.0),
+                child: Row(
+                  children: [
+                    Expanded(child: Divider(thickness: 1)),
+                    Padding(
+                      padding: const EdgeInsets.symmetric(horizontal: 8.0),
+                      child: Text("or", style: TextStyle(color: Colors.grey)),
+                    ),
+                    Expanded(child: Divider(thickness: 1)),
+                  ],
+                ),
+              ),
+
+              // Custom Input Field
+              if (widget.allowCustomItem)
+                TextField(
+                  controller: _controller,
+                  decoration: InputDecoration(
+                    hintText: "Add your custom item",
+                    border: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(widget.borderRadius),
+                      borderSide: BorderSide(color: widget.borderColor ?? Colors.grey),
+                    ),
+                  ),
+                  onChanged: _onCustomTextChanged,
+                ),
             ],
           ),
         ),
